@@ -1,19 +1,13 @@
 export default class Cell {
-    type: number;
-    color: number;
-    connections: number;
-    axis: number;
-    direction: number;
-    static Empty: number;
-    static Wall: number;
-    static Tunnel: number;
-    static Box: number;
-    static Present: number;
-    static Magic: number;
-    static Laser: number;
-    static Continuous: boolean[];
-    open: boolean;
-    flag: boolean;
-    constructor(type?: number, color?: number, connections?: number, axis?: number, direction?: number);
+    lw: boolean;
+    ln: boolean;
+    cw: boolean;
+    cn: boolean;
+    fallen: boolean;
+    constructor(lw?: boolean, // Line West
+    ln?: boolean, // Line North
+    cw?: boolean, // Cut West
+    cn?: boolean, // Cut North
+    fallen?: boolean);
 }
 //# sourceMappingURL=cell.d.ts.map

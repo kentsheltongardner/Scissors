@@ -1,7 +1,6 @@
 import Game from './game.js';
 import Point from './point.js';
 import Cell from './cell.js';
-import Dir from './dir.js';
 import Vec2 from './vec2.js';
 export default class Editor {
     srcGame;
@@ -33,12 +32,10 @@ export default class Editor {
     startBuilding(point) {
         if (!this.dstGame.inBounds(point.x, point.y))
             return;
-        if (this.dstGame.player.x === point.x && this.dstGame.player.y === point.y)
-            return;
         this.building = true;
         const srcCell = this.srcGame.grid[this.srcPoint.x][this.srcPoint.y];
         this.disconnectAt(point);
-        this.dstGame.grid[point.x][point.y] = new Cell(srcCell.type, srcCell.color, 0, srcCell.axis, srcCell.direction);
+        this.dstGame.grid[point.x][point.y] = new Cell(srcCell.lw, srcCell.ln, srcCell.cw, srcCell.cn);
         this.dstGame.render();
     }
     startConnecting() {
@@ -52,9 +49,6 @@ export default class Editor {
             return;
         const srcPlayer = this.srcGame.player;
         if (this.srcPoint.x === srcPlayer.x && this.srcPoint.y === srcPlayer.y) {
-            const cell = this.dstGame.grid[point.x][point.y];
-            if (cell.type !== Cell.Empty)
-                return;
             this.dstGame.player.x = point.x;
             this.dstGame.player.y = point.y;
             this.dstGame.render();
@@ -77,7 +71,7 @@ export default class Editor {
         if (this.dstPoint.x === point.x && this.dstPoint.y === point.y)
             return;
         this.disconnectAt(point);
-        this.dstGame.grid[point.x][point.y] = new Cell(srcCell.type, srcCell.color, 0, srcCell.axis, srcCell.direction);
+        this.dstGame.grid[point.x][point.y] = new Cell(srcCell.lw, srcCell.ln, srcCell.cw, srcCell.cn);
         this.dstGame.render();
     }
     keepConnecting(point) {
@@ -85,15 +79,26 @@ export default class Editor {
         const dy = point.y - this.dstPoint.y;
         if (Math.abs(dx) + Math.abs(dy) !== 1)
             return;
-        const prevType = this.dstGame.grid[this.dstPoint.x][this.dstPoint.y].type;
-        const currType = this.dstGame.grid[point.x][point.y].type;
-        if (prevType !== currType)
+        const prevCell = this.dstGame.grid[this.dstPoint.x][this.dstPoint.y];
+        const currCell = this.dstGame.grid[point.x][point.y];
+        if (prevCell.lw !== currCell.lw || prevCell.ln !== currCell.ln)
             return;
-        if (!Cell.Continuous[prevType])
-            return;
-        const dir = Dir.FromVec2(new Vec2(dx, dy));
-        this.dstGame.grid[this.dstPoint.x][this.dstPoint.y].connections |= Dir.ToBit[dir];
-        this.dstGame.grid[point.x][point.y].connections |= Dir.ToOppositeBit[dir];
+        if (dx === 1) {
+            prevCell.cw = true;
+            currCell.cw = true;
+        }
+        else if (dy === 1) {
+            prevCell.cn = true;
+            currCell.cn = true;
+        }
+        if (dx === -1) {
+            prevCell.cw = true;
+            currCell.cw = true;
+        }
+        else if (dy === -1) {
+            prevCell.cn = true;
+            currCell.cn = true;
+        }
         this.dstGame.render();
     }
     dstMouseMove(event) {
@@ -135,104 +140,11 @@ export default class Editor {
     disconnectAt(point) {
         const x = point.x;
         const y = point.y;
-        for (let i = Dir.First; i <= Dir.Last; i++) {
-            const bit = Dir.ToOppositeBit[i];
-            const vec2 = Dir.ToVec2[i];
-            const x0 = x + vec2.dx;
-            const y0 = y + vec2.dy;
-            if (this.dstGame.inBounds(x0, y0)) {
-                this.dstGame.grid[x0][y0].connections &= ~bit;
-            }
-        }
     }
     grow(direction) {
-        if (direction === Dir.East || direction === Dir.West) {
-            this.dstGame.size.w++;
-        }
-        if (direction === Dir.South || direction === Dir.North) {
-            this.dstGame.size.h++;
-        }
-        switch (direction) {
-            case Dir.East:
-                const columnEast = new Array(this.dstGame.size.h).fill(0).map(() => new Cell());
-                this.dstGame.grid.push(columnEast);
-                break;
-            case Dir.South:
-                for (let i = 0; i < this.dstGame.size.w; i++) {
-                    this.dstGame.grid[i].push(new Cell());
-                }
-                break;
-            case Dir.West:
-                const columnWest = new Array(this.dstGame.size.h).fill(0).map(() => new Cell());
-                this.dstGame.grid.unshift(columnWest);
-                this.dstGame.player.x++;
-                break;
-            case Dir.North:
-                for (let i = 0; i < this.dstGame.size.w; i++) {
-                    this.dstGame.grid[i].unshift(new Cell());
-                }
-                this.dstGame.player.y++;
-                break;
-        }
         this.dstGame.refresh();
     }
     shrink(direction) {
-        switch (direction) {
-            case Dir.East:
-                if (this.dstGame.player.x === this.dstGame.size.w - 1)
-                    return;
-                break;
-            case Dir.South:
-                if (this.dstGame.player.y === this.dstGame.size.h - 1)
-                    return;
-                break;
-            case Dir.West:
-                if (this.dstGame.player.x === 0)
-                    return;
-                break;
-            case Dir.North:
-                if (this.dstGame.player.y === 0)
-                    return;
-                break;
-        }
-        if (direction === Dir.East || direction === Dir.West) {
-            if (this.dstGame.size.w === 1)
-                return;
-            this.dstGame.size.w--;
-        }
-        if (direction === Dir.South || direction === Dir.North) {
-            if (this.dstGame.size.h === 1)
-                return;
-            this.dstGame.size.h--;
-        }
-        switch (direction) {
-            case Dir.East:
-                this.dstGame.grid.pop();
-                for (let i = 0; i < this.dstGame.size.h; i++) {
-                    this.dstGame.grid[this.dstGame.size.w - 1][i].connections &= ~Dir.BitEast;
-                }
-                break;
-            case Dir.South:
-                for (let i = 0; i < this.dstGame.size.w; i++) {
-                    this.dstGame.grid[i].pop();
-                    this.dstGame.grid[i][this.dstGame.size.h - 1].connections &= ~Dir.BitSouth;
-                }
-                break;
-            case Dir.West:
-                this.dstGame.player.x--;
-                this.dstGame.grid.shift();
-                for (let i = 0; i < this.dstGame.size.h; i++) {
-                    this.dstGame.grid[0][i].connections &= ~Dir.BitWest;
-                }
-                break;
-            case Dir.North:
-                this.dstGame.player.y--;
-                for (let i = 0; i < this.dstGame.size.w; i++) {
-                    this.dstGame.grid[i].shift();
-                    this.dstGame.grid[i][0].connections &= ~Dir.BitNorth;
-                }
-                break;
-        }
         this.dstGame.refresh();
     }
     refresh() {

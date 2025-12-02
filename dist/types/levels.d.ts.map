@@ -1,1 +1,1 @@
-{"version":3,"file":"levels.d.ts","sourceRoot":"","sources":["../../src/levels.ts"],"names":[],"mappings":"AAIA,eAAO,MAAM,eAAe,UAiB3B,CAAA;AAED,eAAO,MAAM,gBAAgB,UA+B5B,CAAA;AAED,wBAAgB,UAAU,CAAC,CAAC,EAAE,MAAM,EAAE,CAAC,EAAE,MAAM,UAuB9C"}
+{"version":3,"file":"levels.d.ts","sourceRoot":"","sources":["../../src/levels.ts"],"names":[],"mappings":"AAEA,eAAO,MAAM,eAAe,UAiC3B,CAAA;AAED,eAAO,MAAM,gBAAgB,UAiC5B,CAAA;AAED,wBAAgB,SAAS,CAAC,CAAC,EAAE,MAAM,EAAE,CAAC,EAAE,MAAM,UAoB7C"}

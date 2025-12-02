@@ -1,8 +1,8 @@
-import Dir              from './dir.js'
 import Game             from './game.js'
 import Color            from './color.js'
-import { basicLevelsData, paletteLevelData, randomMaze }  from './levels.js'
+import { basicLevelsData, paletteLevelData, blankGrid }  from './levels.js'
 import Editor           from './editor.js'
+import Dir              from './dir.js'
 
 function main() {
     Color.LoadPNGColors()
@@ -10,6 +10,9 @@ function main() {
     const cellsCanvas   = document.getElementById('cells-canvas') as HTMLCanvasElement
     const gameCanvas    = document.getElementById('game-canvas') as HTMLCanvasElement
     const game          = new Game(basicLevelsData, gameCanvas)
+
+    game.loadLevelData(blankGrid(10, 10))
+
     const cells         = new Game(paletteLevelData, cellsCanvas)
     const editor        = new Editor(cells, game)
 
@@ -39,21 +42,8 @@ function main() {
                 editor.grow(dir)
                 return
             }
-            game.act(dir)
+            game.attemptMove(dir)
             game.render()
-            return
-        }
-
-        // Grab
-        if (event.code === 'Space') {
-            if (game.grab()) {
-                game.render()
-                if (game.levelComplete()) {
-                    setTimeout(() => {
-                        levelAction(() => game.nextLevel())
-                    }, 1000)
-                }
-            }
             return
         }
 
@@ -87,15 +77,6 @@ function main() {
         if (event.code === 'KeyE') {
             editor.toggleEditMode()
         }
-
-        // Mazes
-        if (event.code.indexOf('Digit') === 0) {
-            const size = parseInt(event.code.slice(5)) * 2 + 3
-            const levelData = randomMaze(size, size)
-            game.loadLevelData(levelData)
-            game.refresh()
-            return
-        }
     })
 
     cellsCanvas.addEventListener('mousedown', (event) => editor.srcMouseDown(event))
@@ -105,13 +86,6 @@ function main() {
     gameCanvas.addEventListener('mouseleave', (event) => editor.dstMouseUp(event))
 
     window.addEventListener('contextmenu',    (event) => event.preventDefault())
-
-    // Release the grab
-    window.addEventListener('keyup', (event) => {
-        if (event.code === 'Space') {
-            game.release()
-        }
-    })
 
     // Initial resize and render
     game.refresh()
